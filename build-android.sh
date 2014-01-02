@@ -82,7 +82,8 @@ do_download ()
 	CLEAN=yes
 }
 
-LIBRARIES=--with-libraries=date_time,filesystem,program_options,regex,signals,system,thread,iostreams
+#LIBRARIES=--with-libraries=date_time,filesystem,program_options,regex,signals,system,thread,iostreams
+LIBRARIES=--with-libraries=system
 
 register_option "--with-libraries=<list>" do_with_libraries "Comma separated list of libraries to build."
 do_with_libraries () { LIBRARIES="--with-libraries=$1"; }
@@ -239,12 +240,7 @@ case "$NDK_RN" in
 		CXXPATH=$AndroidNDKRoot/toolchains/${TOOLCHAIN}/prebuilt/$PlatformOS-x86/bin/arm-linux-androideabi-g++
 		TOOLSET=gcc-androidR8e
 		;;
-	"8e (64-bit)")
-		TOOLCHAIN=${TOOLCHAIN:-arm-linux-androideabi-4.6}
-		CXXPATH=$AndroidNDKRoot/toolchains/${TOOLCHAIN}/prebuilt/${PlatformOS}-x86_64/bin/arm-linux-androideabi-g++
-		TOOLSET=gcc-androidR8e
-		;;
-	"9 (64-bit)"|"9b (64-bit)")
+	"8e (64-bit)"|"9 (64-bit)"|"9b (64-bit)")
 		TOOLCHAIN=${TOOLCHAIN:-arm-linux-androideabi-4.6}
 		CXXPATH=$AndroidNDKRoot/toolchains/${TOOLCHAIN}/prebuilt/${PlatformOS}-x86_64/bin/arm-linux-androideabi-g++
 		TOOLSET=gcc-androidR8e
@@ -258,7 +254,7 @@ if [ -n "${AndroidSourcesDetected}" ]; then # Overwrite CXXPATH if we are buildi
     CXXPATH="${ANDROID_TOOLCHAIN}/arm-linux-androideabi-g++"
 fi
 
-echo Building with TOOLSET=$TOOLSET CXXPATH=$CXXPATH CXXFLAGS=$CXXFLAGS | tee $PROGDIR/build.log
+echo Building with TOOLSET=$TOOLSET HOST_ARCH=$HOST_ARCH CXXPATH=$CXXPATH CXXFLAGS=$CXXFLAGS LINKFLAGS=$LDFLAGS | tee $PROGDIR/build.log
 
 # Check if the ndk is valid or not
 if [ ! -f $CXXPATH ]
@@ -370,9 +366,13 @@ echo "Building boost for android"
   cxxflags=""
   for flag in $CXXFLAGS; do cxxflags="$cxxflags cxxflags=$flag"; done
 
-  { ./bjam -q                         \
+  linkflags=""
+  for flag in $LDFLAGS; do linkflags="$linkflags linkflags=$flag"; done
+
+  { ./bjam -q -d+2                    \
          toolset=$TOOLSET             \
          $cxxflags                    \
+         $linkflags                   \
          link=static                  \
          threading=multi              \
          --layout=versioned           \
